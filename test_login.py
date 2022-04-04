@@ -1,28 +1,35 @@
+import cv2
+import sys
 
-class Admin:
-  def __init__(self, username, password)                             :
-    self.username = username
-    self.password = password
+cascPath = sys.argv[1]
+faceCascade = cv2.CascadeClassifier(cascPath)
 
-admin= Admin("abc", "abc")
+video_capture = cv2.VideoCapture(0)
 
+while True:
+    # Capture frame-by-frame
+    ret, frame = video_capture.read()
 
-print("Admin User Login")
-username_login    =str(input("Plesase Enter Username:\n"))
-password_login    =str(input("Plesase Enter Password:\n"))
-if admin.username    == username_login and admin.password== password_login :
-  print("You are in")
-  print("What do you want to do")
-  option = str(input("Read file(1) Write file (2)\n"))
-  if option == "1" :
-    file = open('visitor_info.txt', 'r')
-    New = []
-    for line in file:
-      visitor_info = line.strip()
-      New.append(visitor_info)
-    print(New)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-  elif option == "2" :
-   print("working on it sry")
+    faces = faceCascade.detectMultiScale(
+        gray,
+        scaleFactor=1.1,
+        minNeighbors=5,
+        minSize=(30, 30),
+        flags=cv2.cv.CV_HAAR_SCALE_IMAGE
+    )
 
-else : print("You are not in")
+    # Draw a rectangle around the faces
+    for (x, y, w, h) in faces:
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+    # Display the resulting frame
+    cv2.imshow('Video', frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# When everything is done, release the capture
+video_capture.release()
+cv2.destroyAllWindows()
