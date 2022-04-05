@@ -1,17 +1,35 @@
-import smtplib
-from email.message import EmailMessage
+import cv2
+import e_mail_sender as email
+import time
+
+check = 30
 
 
+cam = cv2.VideoCapture(0)
+while cam.isOpened():
+    start = time.time()
 
-def send_email():
+    ret, frame1 = cam.read()
+    ret, frame2 = cam.read()
+    diff = cv2.absdiff(frame1, frame2)
+    gray = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    _, thresh = cv2.threshold(blur, 20, 255, cv2.THRESH_BINARY)
+    dilated = cv2.dilate(thresh, None, iterations=3)
+    contours, _ = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    for c in contours:
+        if cv2.contourArea(c) < 5000:
+            continue
+        x, y, w, h = cv2.boundingRect(c)
+        cv2.rectangle(frame1, (x, y), (x+w, y+h), (0, 255, 0))
+        if check == 30:
+            cv2.imwrite("image.png", frame1)
+            email.send_email()
+            print("e mail sent")
+            check = 0
+        check += 1
 
+    if cv2.waitKey(10) == ord('q'):
+        break
 
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login("testing.email.1van4o@gmail.com", "edno2345678")
-        email = EmailMessage()
-        email["From"] = "testing.email.1van4o@gmail.com"
-        email['To'] = "ivan2007ny@gmail.com"
-        email["subject"] = "Alarm"
-        email.set_content("moving shit detected")
-        server.send_message(email)
+    cv2.imshow('Secret Cam', frame1)
